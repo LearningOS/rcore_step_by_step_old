@@ -6,6 +6,7 @@ edition = "2018"
 
 [dependencies]
 bbl = { path = "crate/bbl" }
+riscv = { git = "https://github.com/xy-plus/riscv", features = ["inline-asm"] }
 
 [profile.dev]
 panic = "abort"
