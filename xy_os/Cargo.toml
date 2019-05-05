@@ -5,6 +5,7 @@ authors = ["刘丰源 <511568816@qq.com.net>"]
 edition = "2018"
 
 [dependencies]
+bbl = { path = "crate/bbl" }
 
 [profile.dev]
 panic = "abort"
