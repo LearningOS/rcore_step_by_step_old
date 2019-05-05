@@ -3,23 +3,24 @@
 #![feature(global_asm)]
 
 use core::panic::PanicInfo;
-use bbl::sbi;
+
+#[macro_use]
+pub mod io;
 
 global_asm!(include_str!("boot/entry.asm"));
 
 #[panic_handler]
-fn panic(_info: &PanicInfo) -> ! {
+fn panic(info: &PanicInfo) -> ! {
+    println!("{}", info);
     loop {}
 }
 
-static HELLO: &[u8] = b"Hello World!";
-
 #[no_mangle]
 pub extern "C" fn rust_main() -> ! {
-    for &c in HELLO {
-        sbi::console_putchar(c as usize);
-    }
-    loop {}
+    let a = "Hello";
+    let b = "World";
+    println!("{}, {}!", a, b);
+    panic!("End of rust_main");
 }
 
 #[no_mangle]
