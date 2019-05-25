@@ -3,6 +3,9 @@ bbl_path := $(abspath riscv-pk)
 mode := debug
 kernel := target/$(target)/$(mode)/xy_os
 bin := target/$(target)/$(mode)/kernel.bin
+usr_path := usr/build/rust
+
+export SFSIMG = $(usr_path)/main
 
 .PHONY: all clean run build asm qemu kernel
 
