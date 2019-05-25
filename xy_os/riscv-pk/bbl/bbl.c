@@ -10,7 +10,7 @@
 #include <string.h>
 
 extern char _payload_start, _payload_end; /* internal payload */
-static const void* entry_point;
+static const void *entry_point;
 long disabled_hart_mask;
 
 static uintptr_t dtb_output()
@@ -31,7 +31,7 @@ static void filter_dtb(uintptr_t source)
 {
   uintptr_t dest = dtb_output();
   uint32_t size = fdt_size(source);
-  memcpy((void*)dest, (void*)source, size);
+  memcpy((void *)dest, (void *)source, size);
 
   // Remove information from the chained FDT
   filter_harts(dest, &disabled_hart_mask);
@@ -48,11 +48,16 @@ static pte_t p3_table[1 << RISCV_PGLEVEL_BITS] __attribute__((aligned(RISCV_PGSI
 
 static void setup_page_table_sv32()
 {
-  // map kernel 0x80000000 -> 0xC0000000..
-  int i_end = dtb_output();
-  for(unsigned int i = 0x80000000; i <= i_end; i += MEGAPAGE_SIZE) {
-    root_table[(i + 0x40000000) / MEGAPAGE_SIZE] = pte_create(i >> 12, PTE_R | PTE_W | PTE_X);
+  // map kernel [0x300..] 0x80000000 -> 0xC0000000..
+  int i_end = dtb_output() / MEGAPAGE_SIZE;
+  for (int i = 0x200; i < i_end + 1; ++i)
+  {
+    root_table[i + 0x100] = pte_create(i << RISCV_PGLEVEL_BITS, PTE_R | PTE_W | PTE_X);
   }
+  // map recursive [0x3fd] (V), [0x3fe] (VRW), [0x3ff] (VRW)
+  uintptr_t root_table_ppn = (uintptr_t)root_table >> RISCV_PGSHIFT;
+  root_table[0x3fd] = pte_create(root_table_ppn, 0);
+  root_table[0x3fe] = pte_create(root_table_ppn, PTE_R | PTE_W);
 }
 
 static void setup_page_table_sv39()
@@ -68,16 +73,17 @@ static void setup_page_table_sv39()
 static void setup_page_table_sv48()
 {
   // map kernel [0o777] 0x80000000 -> 0xFFFFFFFF_C0000000 (size = 1G)
-	uintptr_t p3_table_ppn = (uintptr_t) p3_table >> RISCV_PGSHIFT;
+  uintptr_t p3_table_ppn = (uintptr_t)p3_table >> RISCV_PGSHIFT;
   root_table[0777] = pte_create(p3_table_ppn, 0);
-	p3_table[0777] = pte_create(0x80000, PTE_R | PTE_W | PTE_X);
+  p3_table[0777] = pte_create(0x80000, PTE_R | PTE_W | PTE_X);
   // map recursive [0o774] (V), [0o775] (VRW), [0o776] (VRW)
-  uintptr_t root_table_ppn = (uintptr_t) root_table >> RISCV_PGSHIFT;
+  uintptr_t root_table_ppn = (uintptr_t)root_table >> RISCV_PGSHIFT;
   root_table[0774] = pte_create(root_table_ppn, 0);
   root_table[0775] = pte_create(root_table_ppn, PTE_R | PTE_W);
 }
 
-static void enable_paging() {
+static void enable_paging()
+{
   uintptr_t root_table_ppn = (uintptr_t)root_table >> RISCV_PGSHIFT;
   write_csr(sptbr, root_table_ppn | SATP_MODE_CHOICE);
   flush_tlb();
@@ -85,15 +91,18 @@ static void enable_paging() {
 
 void boot_other_hart(uintptr_t unused __attribute__((unused)))
 {
-  const void* entry;
-  do {
+  const void *entry;
+  do
+  {
     entry = entry_point;
     mb();
   } while (!entry);
 
   long hartid = read_csr(mhartid);
-  if ((1 << hartid) & disabled_hart_mask) {
-    while (1) {
+  if ((1 << hartid) & disabled_hart_mask)
+  {
+    while (1)
+    {
       __asm__ volatile("wfi");
 #ifdef __riscv_div
       __asm__ volatile("div x0, x0, x0");
@@ -102,21 +111,21 @@ void boot_other_hart(uintptr_t unused __attribute__((unused)))
   }
 
 #ifdef BBL_BOOT_MACHINE
-  asm (".pushsection .rodata\n"
-       "bbl_functions:\n"
-       "  .word mcall_trap\n"
-       "  .word illegal_insn_trap\n"
-       "  .word mcall_console_putchar\n"
-       "  .word mcall_console_getchar\n"
-       ".popsection\n");
-  extern void* bbl_functions;
+  asm(".pushsection .rodata\n"
+      "bbl_functions:\n"
+      "  .word mcall_trap\n"
+      "  .word illegal_insn_trap\n"
+      "  .word mcall_console_putchar\n"
+      "  .word mcall_console_getchar\n"
+      ".popsection\n");
+  extern void *bbl_functions;
   enter_machine_mode(entry, hartid, dtb_output(), ~disabled_hart_mask & hart_mask, (uintptr_t)&bbl_functions);
 #else /* Run bbl in supervisor mode */
   enable_paging();
 #if __riscv_xlen == 64
-    uintptr_t dtb = dtb_output() + 0xffffffff40000000;
+  uintptr_t dtb = dtb_output() + 0xffffffff40000000;
 #else
-    uintptr_t dtb = dtb_output() + 0x40000000;
+  uintptr_t dtb = dtb_output() + 0x40000000;
 #endif
   enter_supervisor_mode(entry, hartid, dtb, ~disabled_hart_mask & hart_mask);
 #endif
