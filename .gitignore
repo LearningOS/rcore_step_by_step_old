@@ -14,3 +14,5 @@ Cargo.lock
 **/*.rs.bk
 
 .vscode/
+
+.DS_Store
