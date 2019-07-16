@@ -8,6 +8,8 @@
 
 - [GitBook（文档）](https://xy-plus.gitbook.io/rcore-step-by-step)
 
+- [文档（源文件）](https://github.com/chyyuu/rcoresbs_doc)
+
 - [知乎专栏](https://zhuanlan.zhihu.com/c_1086573713289347072)
 
 ## 如何使用
@@ -24,3 +26,7 @@ docker:
 进入 docker 后，执行 `cd mnt` ，即可看见工作目录，然后就可以开始写代码啦！
 
 > 每一章对应的源代码可以在 [GitHub](https://github.com/LearningOS/rcore_step_by_step) 的 commit 中找到， commit 号于每一篇文章的开头给出
+
+## rCore Summer of Code
+
+- [rCore Summer of Code 2019](https://github.com/LearningOS/rcore_step_by_step/wiki/rCore-Summer-of-Code)
