@@ -18,6 +18,10 @@ fn sys_call(
     ret
 }
 
+pub fn sys_read(fd : usize, base : *const u8, len : usize) -> i32 {
+    sys_call(SyscallId::Read, fd, base as usize , len , 0)
+}
+
 pub fn sys_write(ch : u8) -> i32 {
     sys_call(SyscallId::Write, ch as usize, 0, 0, 0)
 }
@@ -28,6 +32,7 @@ pub fn sys_exit(code: usize) -> ! {
 }
 
 enum SyscallId {
+    Read = 63,
     Write = 64,
     Exit = 93,
 }

@@ -61,8 +61,15 @@ impl ThreadPool {
         let mut thread_info = self.threads[tid].as_mut().expect("thread not exits !");
         if thread_info.present {
             thread_info.thread = Some(thread);
-            thread_info.status = Status::Ready;
-            self.scheduler.push(tid);
+            match thread_info.status {
+                Status::Ready => {
+                    thread_info.status = Status::Ready;
+                    self.scheduler.push(tid);
+                },
+                _ => {
+                    //println!("do nothing!");
+                },
+            }
         }
     }
 
@@ -79,5 +86,15 @@ impl ThreadPool {
         });
         self.scheduler.exit(tid);
         println!("exit code: {}", code);
+    }
+
+    pub fn wakeup(&mut self, tid: Tid) {
+        let proc = self.threads[tid].as_mut().expect("thread not exist");
+        if proc.present {
+            proc.status = Status::Ready;
+            self.scheduler.push(tid);
+        } else {
+            panic!("try to sleep an null thread !");
+        }
     }
 }
